@@ -9,50 +9,50 @@
 // Exemple d'import d'image (décommente et adapte) :
 // import ASAimg from '../../assets/images/gl/ASA.png';
 // export const GL_IMAGES: Record<string, any> = { ASA: ASAimg };
-import adm from '../../chant-eeif/assets/images/gl/aix.jpg';
-import asa from '../../chant-eeif/assets/images/gl/asa.jpg';
-import lbc from '../../chant-eeif/assets/images/gl/barcokhba.png';
-import bdx from '../../chant-eeif/assets/images/gl/bordeaux.png';
-import hsb from '../../chant-eeif/assets/images/gl/boulogne.jpg';
-import bjk from '../../chant-eeif/assets/images/gl/buffault.jpg';
-import can from '../../chant-eeif/assets/images/gl/canne.png';
-import cmba from '../../chant-eeif/assets/images/gl/colmar.png';
-import cpdg from '../../chant-eeif/assets/images/gl/copernic.png';
-import csb from '../../chant-eeif/assets/images/gl/courbevoie.png';
-import pdv from '../../chant-eeif/assets/images/gl/dorvador.png';
-import dmm from '../../chant-eeif/assets/images/gl/dufrenoy.png';
-import pef from '../../chant-eeif/assets/images/gl/edmond.jpg';
-import pgm from '../../chant-eeif/assets/images/gl/golda.png';
-import gmc from '../../chant-eeif/assets/images/gl/grenoble.jpeg';
-import ira from '../../chant-eeif/assets/images/gl/israel.png';
-import irc from '../../chant-eeif/assets/images/gl/issy.jpg';
-import slgk from '../../chant-eeif/assets/images/gl/koumi.jpeg';
-import rda from '../../chant-eeif/assets/images/gl/laroquette.png';
-import vjpb from '../../chant-eeif/assets/images/gl/lavictoire.png';
-import lrw from '../../chant-eeif/assets/images/gl/lille.png';
-import lsv from '../../chant-eeif/assets/images/gl/londre.jpg';
-import lma from '../../chant-eeif/assets/images/gl/lyon.jpg';
-import mrg from '../../chant-eeif/assets/images/gl/marseille.png';
-import mmc from '../../chant-eeif/assets/images/gl/montpellier.png';
-import nml from '../../chant-eeif/assets/images/gl/nancy.png';
-import nby from '../../chant-eeif/assets/images/gl/nice.png';
-import nlk from '../../chant-eeif/assets/images/gl/nlk.jpg';
-import npxv from '../../chant-eeif/assets/images/gl/noam.png';
-import njcr from '../../chant-eeif/assets/images/gl/nrose.png';
-import njcv from '../../chant-eeif/assets/images/gl/nvert.png';
-import slgo from '../../chant-eeif/assets/images/gl/ori.jpeg';
-import lkl from '../../chant-eeif/assets/images/gl/paris12.png';
-import pgl from '../../chant-eeif/assets/images/gl/paris17.png';
-import psb from '../../chant-eeif/assets/images/gl/psb.jpg';
-import sbmd from '../../chant-eeif/assets/images/gl/sb.jpg';
-import sth from '../../chant-eeif/assets/images/gl/segur.png';
-import sib from '../../chant-eeif/assets/images/gl/shemab.png';
-import sin from '../../chant-eeif/assets/images/gl/sheman.png';
-import sfh from '../../chant-eeif/assets/images/gl/strasbourg.jpg';
-import tmd from '../../chant-eeif/assets/images/gl/toulon.jpg';
-import tlb from '../../chant-eeif/assets/images/gl/toulouse.png';
-import vmb from '../../chant-eeif/assets/images/gl/versailles.jpg';
-import ysm from '../../chant-eeif/assets/images/gl/yona.png';
+import adm from '../assets/images/gl/aix.jpg';
+import asa from '../assets/images/gl/asa.jpg';
+import lbc from '../assets/images/gl/barcokhba.png';
+import bdx from '../assets/images/gl/bordeaux.png';
+import hsb from '../assets/images/gl/boulogne.jpg';
+import bjk from '../assets/images/gl/buffault.jpg';
+import can from '../assets/images/gl/canne.png';
+import cmba from '../assets/images/gl/colmar.png';
+import cpdg from '../assets/images/gl/copernic.png';
+import csb from '../assets/images/gl/courbevoie.png';
+import pdv from '../assets/images/gl/dorvador.png';
+import dmm from '../assets/images/gl/dufrenoy.png';
+import pef from '../assets/images/gl/edmond.jpg';
+import pgm from '../assets/images/gl/golda.png';
+import gmc from '../assets/images/gl/grenoble.jpeg';
+import ira from '../assets/images/gl/israel.png';
+import irc from '../assets/images/gl/issy.jpg';
+import slgk from '../assets/images/gl/koumi.jpeg';
+import rda from '../assets/images/gl/laroquette.png';
+import vjpb from '../assets/images/gl/lavictoire.png';
+import lrw from '../assets/images/gl/lille.png';
+import lsv from '../assets/images/gl/londre.jpg';
+import lma from '../assets/images/gl/lyon.jpg';
+import mrg from '../assets/images/gl/marseille.png';
+import mmc from '../assets/images/gl/montpellier.png';
+import nml from '../assets/images/gl/nancy.png';
+import nby from '../assets/images/gl/nice.png';
+import nlk from '../assets/images/gl/nlk.jpg';
+import npxv from '../assets/images/gl/noam.png';
+import njcr from '../assets/images/gl/nrose.png';
+import njcv from '../assets/images/gl/nvert.png';
+import slgo from '../assets/images/gl/ori.jpeg';
+import lkl from '../assets/images/gl/paris12.png';
+import pgl from '../assets/images/gl/paris17.png';
+import psb from '../assets/images/gl/psb.jpg';
+import sbmd from '../assets/images/gl/sb.jpg';
+import sth from '../assets/images/gl/segur.png';
+import sib from '../assets/images/gl/shemab.png';
+import sin from '../assets/images/gl/sheman.png';
+import sfh from '../assets/images/gl/strasbourg.jpg';
+import tmd from '../assets/images/gl/toulon.jpg';
+import tlb from '../assets/images/gl/toulouse.png';
+import vmb from '../assets/images/gl/versailles.jpg';
+import ysm from '../assets/images/gl/yona.png';
 
 export const GL_IMAGES: Record<string, any> = {
   // ASA: require('../../assets/images/gl/ASA.png'),  ← exemple pour image1.png
@@ -147,7 +147,7 @@ export const GROUPES_LOCAUX: GroupeLocal[] = [
   { id: "RDA",  nom: "La Roquette",          figure: "Don Abravanel",      ville: "Paris 9",               region: "paris",         emoji: GL_IMAGES.RDA },
   { id: "PGL",  nom: "PGL",                  figure: "Georges Loinger",    ville: "Paris 17",              region: "paris",         emoji: GL_IMAGES.PGL },
   { id: "PSB",  nom: "Pavillon Sous Bois",   figure: "Irena Sandler",      ville: "Pavillon-Sous-Bois",    region: "idf",           emoji: GL_IMAGES.PSB },
-  { id: "SBMD", nom: "Saint-Brice District", figure: "Moshe Dayan",       ville: "Saint-Brice-Sous-Foret", region: "idf",           emoji: GL_IMAGES.SBMD },
+  { id: "SBMD", nom: "Saint-Brice District", figure: "Moshe Dayan",        ville: "Saint-Brice-Sous-Foret",region: "idf",           emoji: GL_IMAGES.SBMD },
   { id: "STH",  nom: "Ségur",                figure: "Théodore Herzl",     ville: "Paris 7",               region: "paris",         emoji: GL_IMAGES.STH },
   { id: "SIB",  nom: "Shema Bleu",           figure: "Shema Israël",       ville: "Paris 4",               region: "paris",         emoji: GL_IMAGES.SIB },
   { id: "SIN",  nom: "Shema Noir",           figure: "Shema Israël",       ville: "Paris 4",               region: "paris",         emoji: GL_IMAGES.SIN },
