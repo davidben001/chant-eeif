@@ -535,7 +535,7 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
   const [showRemarque, setShowRemarque] = useState(false);
   const [accordsEpingles, setAccordsEpingles] = useState(true);
   const [autoScroll, setAutoScroll] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(2);
+  const [scrollSpeed, setScrollSpeed] = useState(1);
   const scrollRef = useRef<ScrollView>(null);
   const scrollY = useRef(0);
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -621,7 +621,7 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
           </TouchableOpacity>
           {/* Contrôles défilement auto */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
-          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.max(1, s - 1))}
+          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.max(0, s - 0.5))}
             style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#f0c060",
                      alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: "#7a4f00", fontWeight: "700", fontSize: 16 }}>−</Text>
@@ -633,7 +633,7 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
               {autoScroll ? "⏸" : "▶"}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.min(10, s + 1))}
+          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.min(5, s + 0.5))}
             style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#f0c060",
                      alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: "#7a4f00", fontWeight: "700", fontSize: 16 }}>+</Text>
