@@ -4,7 +4,7 @@
 // statut: "approuvé" = visible, "en_attente" = en attente de validation admin
 
 export type Vers = {
-  type: "couplet" | "refrain" | "pré-refrain" | "pont" | "intro" | "outro";
+  type: "couplet" | "pont" | "pré-refrain" | "refrain" | "post-refrain" | "intro" | "outro";
   numero?: number;
   paroles: string;
   accords?: string; // accords spécifiques à cette partie (optionnel)

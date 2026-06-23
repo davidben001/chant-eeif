@@ -1,17 +1,15 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
   Platform,
   ScrollView,
-  StyleSheet,
   Text, TextInput, TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { type Chanson } from "../../data/chansons";
 import { GL_IMAGES, GROUPES_LOCAUX, REGIONS, type GroupeLocal } from "../../data/groupesLocaux";
 
-import { useEffect } from "react";
 import {
   ecouterChansons,
   initialiserChansons,
@@ -20,7 +18,14 @@ import {
   supprimerChanson,
 } from "../../config/songService";
 
-import "../../assets/images/logo-EEIF.png";
+import fvr from "../../assets/images/foulard-vr.png";
+import logo from "../../assets/images/logo-EEIF.png";
+
+const PHOTO: Record<string, any> = {
+  // ASA: require('../../assets/images/gl/ASA.png'),  ← exemple pour image1.png
+  LOGO:  logo,
+  FVR: fvr
+};
 
 // ─── RÉGLAGES CONTEXTE ───────────────────────────────────────────────────────
 
@@ -32,23 +37,24 @@ const useSettings = () => useContext(SettingsCtx);
 // ─── NAVIGATION TABS ─────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "home",      label: "Accueil",              emoji: "🏠" },
-  { id: "toutes",    label: "Toutes les chansons",  emoji: "🎶" },
-  { id: "eeif",      label: "Chansons EEIF",        emoji: "⚜️" },
-  { id: "gl",        label: "Chansons par GL",       emoji: "📍" },
-  { id: "diverses",  label: "Chansons diverses",     emoji: "🎵" },
-  { id: "favorites", label: "Mes favoris",           emoji: "❤️" },
-  { id: "playlists", label: "Playlists",             emoji: "📋" },
-  { id: "soumettre", label: "Soumettre une chanson", emoji: "➕" },
+  { id: "home",      label: "Accueil",              emoji: "🏠",  photo: null },
+  { id: "toutes",    label: "Toutes les chansons",  emoji: "🎶",  photo: null },
+  { id: "eeif",      label: "Chansons EEIF",        emoji: null,  photo: "LOGO" },
+  { id: "gl",        label: "Chansons par GL",       emoji: null,  photo: "FVR" },
+  { id: "diverses",  label: "Chansons diverses",     emoji: "🎵",  photo: null },
+  { id: "favorites", label: "Mes favoris",           emoji: "❤️",  photo: null },
+  { id: "playlists", label: "Playlists",             emoji: "📋",  photo: null },
+  { id: "soumettre", label: "Soumettre une chanson", emoji: "➕",  photo: null },
 ];
+
 const HERO_TABS = TABS.filter((t) => t.id !== "home");
 
 const versTypeLabel: Record<string, string> = {
-  couplet: "Couplet", refrain: "Refrain",
-  "pré-refrain": "Pré-refrain", pont: "Pont",
+  couplet: "Couplet", pont: "Pont",
+  "pré-refrain": "Pré-refrain", refrain: "Refrain", "post-refrain": "Post-refrain",
   outro: "Outro", intro: "Intro",
 };
-const VERS_TYPES = ["couplet", "refrain", "pré-refrain", "pont", "intro", "outro"];
+const VERS_TYPES = ["couplet", "pont", "pré-refrain", "refrain" , "post-refrain", "intro", "outro"];
 
 // ─── COULEURS ────────────────────────────────────────────────────────────────
 
@@ -145,7 +151,7 @@ function SongCard({ song, onPress, onToggleFavorite, isFavorite, playlists, onAd
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
               <Badge color={catColor}>{song.categorie === "eeif" ? "⚜️ EEIF" : "🎵 Diverse"}</Badge>
               {song.isGL && Array.isArray(song.glNoms) && song.glNoms.map((nom, i) => (
-                <Badge key={i} color="amber">📍 {nom}</Badge>
+                <Badge key={i} color="amber">{"📍 " + nom}</Badge>
               ))}
               {song.isCamp && <Badge color="blue">⛺ Camp {song.annéeCamp}</Badge>}
               {song.auteur && <Text style={{ fontSize: 11, color: C.textSecondary, alignSelf: "center" }}>✍️ {song.auteur}</Text>}
@@ -185,28 +191,6 @@ function SongCard({ song, onPress, onToggleFavorite, isFavorite, playlists, onAd
     </View>
   );
 }
-//function SongCard({ song, onPress }: { song: Chanson; onPress: () => void }) {
-//  const catColor = song.categorie === "eeif" ? "green" : "blue";
-//  return (
-//    <Card onPress={onPress}>
-//      <Text style={{ fontSize: 15, fontWeight: "500", color: C.textPrimary, marginBottom: 5 }}>{song.titre}</Text>
-//      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-//        <Badge color={catColor}>{song.categorie === "eeif" ? "⚜️ EEIF" : "🎵 Diverse"}</Badge>
-//        {song.isGL &&
-//          Array.isArray(song.glNoms) &&
-//          song.glNoms.map((nom, i) => (
-//            <Badge key={i} color="amber">
-//              📍 {nom}
-//            </Badge>
-//          ))
-//        }
-//        {song.isCamp && <Badge color="blue">⛺ Camp {song.annéeCamp}</Badge>}
-//        {song.auteur && <Text style={{ fontSize: 11, color: C.textSecondary, alignSelf: "center" }}>✍️ {song.auteur}</Text>}
-//        {song.statut === "en_attente" && <Badge color="amber">⏳ En attente</Badge>}
-//      </View>
-//    </Card>
-//  );
-//}
 
 function EmptyState({ emoji, title, sub, btnLabel, onBtn }:
   { emoji: string; title: string; sub: string; btnLabel?: string; onBtn?: () => void }) {
@@ -223,7 +207,7 @@ function EmptyState({ emoji, title, sub, btnLabel, onBtn }:
 // ─── FILTRES/TRI PARTAGÉS ────────────────────────────────────────────────────
 
 type SortKey = "alpha" | "date" | "camp";
-type FilterState = { search: string; sort: SortKey; onlyCamp: boolean; onlyGL: boolean; campType: string };
+type FilterState = { search: string; sort: SortKey; onlyCamp: boolean; onlyGL: boolean; campType: string; onlyDiverse: boolean; onlyEEIF: boolean; noCamp: boolean };
 
 function applyFilters(songs: Chanson[], f: FilterState): Chanson[] {
   let list = songs.filter((s) => s.statut === "approuvé");
@@ -237,6 +221,9 @@ function applyFilters(songs: Chanson[], f: FilterState): Chanson[] {
     );
   }
   if (f.onlyCamp) list = list.filter((s) => s.isCamp);
+  if (f.onlyDiverse) list = list.filter((s) => s.categorie === "diverse");
+  if (f.onlyEEIF) list = list.filter((s) => s.categorie === "eeif");
+  if (f.noCamp) list = list.filter((s) => !s.isCamp);
   if (f.campType) list = list.filter((s) => s.typeCamp === f.campType);
   if (f.onlyGL)   list = list.filter((s) => s.isGL);
   if (f.sort === "alpha") list = [...list].sort((a, b) => a.titre.localeCompare(b.titre, "fr"));
@@ -245,55 +232,21 @@ function applyFilters(songs: Chanson[], f: FilterState): Chanson[] {
   return list;
 }
 
-//function FilterBar({ f, setF, showCampSort = false }:
-//  { f: FilterState; setF: (x: FilterState) => void; showCampSort?: boolean }) {
-//  const toggle = (key: keyof FilterState) =>
-//    setF({ ...f, [key]: !f[key as "onlyCamp" | "onlyGL"] });
-//  const sorts: { k: SortKey; label: string }[] = [
-//    { k: "alpha", label: "A→Z" },
-//    { k: "date",  label: "Récent" },
-//    ...(showCampSort ? [{ k: "camp" as SortKey, label: "Année camp" }] : []),
-//  ];
-//  return (
-//    <View style={{ marginBottom: 10 }}>
-//      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-//        contentContainerStyle={{ gap: 6, paddingBottom: 4 }}>
-//        {sorts.map((s) => (
-//          <TouchableOpacity key={s.k} onPress={() => setF({ ...f, sort: s.k })}
-//            style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 0.5,
-//                     borderColor: f.sort === s.k ? C.primary : C.border,
-//                     backgroundColor: f.sort === s.k ? "#e8f5e9" : C.white }}>
-//            <Text style={{ fontSize: 12, color: f.sort === s.k ? C.primary : C.textSecondary, fontWeight: f.sort === s.k ? "500" : "400" }}>
-//              {s.label}
-//            </Text>
-//          </TouchableOpacity>
-//        ))}
-//        <TouchableOpacity onPress={() => toggle("onlyCamp")}
-//          style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 0.5,
-//                   borderColor: f.onlyCamp ? C.primary : C.border,
-//                   backgroundColor: f.onlyCamp ? "#e8f5e9" : C.white }}>
-//          <Text style={{ fontSize: 12, color: f.onlyCamp ? C.primary : C.textSecondary, fontWeight: f.onlyCamp ? "500" : "400" }}>⛺ Camp</Text>
-//        </TouchableOpacity>
-//        <TouchableOpacity onPress={() => toggle("onlyGL")}
-//          style={{ paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 0.5,
-//                   borderColor: f.onlyGL ? C.primary : C.border,
-//                   backgroundColor: f.onlyGL ? "#e8f5e9" : C.white }}>
-//          <Text style={{ fontSize: 12, color: f.onlyGL ? C.primary : C.textSecondary, fontWeight: f.onlyGL ? "500" : "400" }}>📍 GL</Text>
-//        </TouchableOpacity>
-//      </ScrollView>
-//    </View>
-//  );
-//}
-function FilterBar({ f, setF, showCampSort = false }:
-  { f: FilterState; setF: (x: FilterState) => void; showCampSort?: boolean }) {
+function FilterBar({ f, setF, showCampSort = false, config = "default" }:
+  { f: FilterState; setF: (x: FilterState) => void; showCampSort?: boolean;
+    config?: "default" | "toutes" | "eeif" | "favorites" | "diverses" }) {
+
   const sorts: { k: SortKey; label: string }[] = [
     { k: "alpha", label: "A → Z" },
     { k: "date",  label: "Plus récent" },
     ...(showCampSort ? [{ k: "camp" as SortKey, label: "Année camp" }] : []),
+    ...(config === "diverses" ? [{ k: "auteur" as SortKey, label: "Auteur" }] : []),
   ];
+
+  const anyActive = f.onlyCamp || f.onlyGL || f.onlyDiverse || f.noCamp || !!f.campType;
+
   return (
     <View style={{ marginBottom: 12 }}>
-      {/* SECTION TRI */}
       <Text style={{ fontSize: 10, fontWeight: "600", textTransform: "uppercase",
                      letterSpacing: 0.8, color: "#888", marginBottom: 5 }}>Trier par</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
@@ -304,51 +257,101 @@ function FilterBar({ f, setF, showCampSort = false }:
                      borderColor: f.sort === s.k ? C.primary : "#e0e0e0",
                      backgroundColor: f.sort === s.k ? C.primary : "#fff" }}>
             <Text style={{ fontSize: 12, color: f.sort === s.k ? "#e8f5e9" : "#666",
-                           fontWeight: f.sort === s.k ? "600" : "400" }}>
-              {s.label}
-            </Text>
+                           fontWeight: f.sort === s.k ? "600" : "400" }}>{s.label}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-      {/* SECTION FILTRES */}
-      <Text style={{ fontSize: 10, fontWeight: "600", textTransform: "uppercase",
-                     letterSpacing: 0.8, color: "#888", marginBottom: 5 }}>Filtrer</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 6 }} >
-        <TouchableOpacity onPress={() => setF({ ...f, onlyCamp: !f.onlyCamp })}
-          style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
-                   borderColor: f.onlyCamp ? "#1565c0" : "#e0e0e0",
-                   backgroundColor: f.onlyCamp ? "#e3f2fd" : "#fff" }}>
-          {/* Filtre Chanson de Camp */}
-          <Text style={{ fontSize: 12, color: f.onlyCamp ? "#1565c0" : "#666",
-                         fontWeight: f.onlyCamp ? "600" : "400" }}><Image source={require('../../assets/images/logo-EEIF.png')}
-                         style={{ width: 20, height: 20, marginBottom: 1, borderRadius: 12 }}/>  Chansons de camp</Text>
-        </TouchableOpacity>
-        {f.onlyCamp && ["BC", "BM", "BP"].map((type) => (
-          <TouchableOpacity key={type} onPress={() => setF({ ...f, campType: f.campType === type ? "" : type })}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
-                     borderColor: f.campType === type ? "#1565c0" : "#e0e0e0",
-                     backgroundColor: f.campType === type ? "#e3f2fd" : "#fff" }}>
-            <Text style={{ fontSize: 12, color: f.campType === type ? "#1565c0" : "#666",
-                           fontWeight: f.campType === type ? "600" : "400" }}>⛺ {type}</Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity onPress={() => setF({ ...f, onlyGL: !f.onlyGL })}
-          style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
-                   borderColor: f.onlyGL ? "#f57f17" : "#e0e0e0",
-                   backgroundColor: f.onlyGL ? "#fff8e1" : "#fff" }}>
-          <Text style={{ fontSize: 12, color: f.onlyGL ? "#f57f17" : "#666",
-                         fontWeight: f.onlyGL ? "600" : "400" }}>📍 GL uniquement</Text>
-        </TouchableOpacity>
-        {/* Indicateur si filtres actifs */}
-        {(f.onlyCamp || f.onlyGL) && (
-          <TouchableOpacity onPress={() => setF({ ...f, onlyCamp: false, campType: "", onlyGL: false })}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
-                     borderColor: "#ef9a9a", backgroundColor: "#ffebee" }}>
-            <Text style={{ fontSize: 12, color: "#c62828", fontWeight: "600" }}>✕ Effacer filtres</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+
+      {config !== "diverses" && (
+        <>
+          <Text style={{ fontSize: 10, fontWeight: "600", textTransform: "uppercase",
+                         letterSpacing: 0.8, color: "#888", marginBottom: 5 }}>Filtrer</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+
+            {/* EEIF/Diverse — page toutes et favorites */}
+            {(config === "toutes" || config === "favorites") && (
+              <>
+                <TouchableOpacity onPress={() => setF({ ...f, onlyEEIF: !f.onlyEEIF, onlyDiverse: false, onlyCamp: false, onlyGL: false, campType: "" })}
+                  style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                           borderColor: f.onlyEEIF ? C.primary : "#e0e0e0",
+                           backgroundColor: f.onlyEEIF ? "#e8f5e9" : "#fff" }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                    <Image source={PHOTO.LOGO} style={{ width: 14, height: 14, borderRadius: 3 }} />
+                    <Text style={{ fontSize: 12, color: f.onlyEEIF ? C.primary : "#666",
+                                   fontWeight: f.onlyEEIF ? "600" : "400" }}>EEIF</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setF({ ...f, onlyDiverse: true, onlyCamp: false, onlyGL: false, campType: "" })}
+                  style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                           borderColor: f.onlyDiverse ? "#1565c0" : "#e0e0e0",
+                           backgroundColor: f.onlyDiverse ? "#e3f2fd" : "#fff" }}>
+                  <Text style={{ fontSize: 12, color: f.onlyDiverse ? "#1565c0" : "#666",
+                                 fontWeight: f.onlyDiverse ? "600" : "400" }}>🎵 Diverses</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* GL — toutes, eeif, favorites */}
+            {!f.onlyDiverse && (config === "toutes" || config === "eeif" || config === "favorites") && (
+              <TouchableOpacity onPress={() => setF({ ...f, onlyGL: !f.onlyGL, onlyCamp: false, campType: "" })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                         borderColor: f.onlyGL ? "#f57f17" : "#e0e0e0",
+                         backgroundColor: f.onlyGL ? "#fff8e1" : "#fff" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Image source={PHOTO.FVR} style={{ width: 14, height: 14, borderRadius: 3 }} />
+                  <Text style={{ fontSize: 12, color: f.onlyGL ? "#f57f17" : "#666",
+                                 fontWeight: f.onlyGL ? "600" : "400" }}>GL uniquement</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Camp — visible seulement si GL activé */}
+            {f.onlyGL && (
+              <TouchableOpacity onPress={() => setF({ ...f, onlyCamp: !f.onlyCamp, campType: "" })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                         borderColor: f.onlyCamp ? "#1565c0" : "#e0e0e0",
+                         backgroundColor: f.onlyCamp ? "#e3f2fd" : "#fff" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Image source={PHOTO.LOGO} style={{ width: 14, height: 14, borderRadius: 3 }} />
+                  <Text style={{ fontSize: 12, color: f.onlyCamp ? "#1565c0" : "#666",
+                                 fontWeight: f.onlyCamp ? "600" : "400" }}>Chansons de camp</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* BC BM BP */}
+            {f.onlyCamp && ["BC", "BM", "BP"].map((type) => (
+              <TouchableOpacity key={type} onPress={() => setF({ ...f, campType: f.campType === type ? "" : type })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                         borderColor: f.campType === type ? "#1565c0" : "#e0e0e0",
+                         backgroundColor: f.campType === type ? "#e3f2fd" : "#fff" }}>
+                <Text style={{ fontSize: 12, color: f.campType === type ? "#1565c0" : "#666",
+                               fontWeight: f.campType === type ? "600" : "400" }}>⛺ {type}</Text>
+              </TouchableOpacity>
+            ))}
+
+            {/* Pas de camp — toutes, eeif, favorites */}
+            {!f.onlyDiverse && (config === "toutes" || config === "eeif" || config === "favorites") && (
+              <TouchableOpacity onPress={() => setF({ ...f, noCamp: !f.noCamp })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                         borderColor: f.noCamp ? "#888" : "#e0e0e0",
+                         backgroundColor: f.noCamp ? "#f5f5f5" : "#fff" }}>
+                <Text style={{ fontSize: 12, color: f.noCamp ? "#444" : "#666",
+                               fontWeight: f.noCamp ? "600" : "400" }}>🚫 Pas de camp</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Effacer */}
+            {anyActive && (
+              <TouchableOpacity onPress={() => setF({ ...f, onlyCamp: false, campType: "", onlyGL: false, onlyDiverse: false, noCamp: false })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 0.5,
+                         borderColor: "#ef9a9a", backgroundColor: "#ffebee" }}>
+                <Text style={{ fontSize: 12, color: "#c62828", fontWeight: "600" }}>✕ Effacer</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }
@@ -362,7 +365,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
         <Text style={{ fontSize: 48, marginBottom: 8 }}>🏕️</Text>
         <Text style={{ fontSize: 22, fontWeight: "600", color: C.textPrimary, marginBottom: 4 }}>Chant-EEIF</Text>
         <Text style={{ fontSize: 13, color: C.textSecondary, textAlign: "center" }}>
-          Le carnet de chants du mouvement — toujours avec toi, même sous les étoiles
+          Le carnet de chants du mouvement — toujours avec toi, même sur les camps
         </Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
@@ -371,12 +374,18 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
             style={{ backgroundColor: C.white, borderRadius: 14, borderWidth: 0.5, borderColor: C.border,
                      padding: 16, alignItems: "center",
                      width: "47%", minWidth: 140, flexGrow: 1 }}>
-            {tab.id === "eeif" ? (
-              <Image source={require('../../assets/images/logo-EEIF.png')}
+            {tab.photo ? (
+            <Image source={PHOTO[tab.photo]}
+              style={{ width: 40, height: 40, marginBottom: 6, borderRadius: 6 }} />
+          ) : (
+            <Text style={{ fontSize: 32, marginBottom: 6 }}>{tab.emoji}</Text>
+          )}
+            {/*{tab.id === "eeif" ? (
+              <Image source={PHOTO.LOGO}
                 style={{ width: 40, height: 40, marginBottom: 6, borderRadius: 6 }} />
             ) : (
               <Text style={{ fontSize: 32, marginBottom: 6 }}>{tab.emoji}</Text>
-            )}
+            )}*/}
             <Text style={{ fontSize: 13, fontWeight: "500", color: C.textPrimary, textAlign: "center" }}>{tab.label}</Text>
           </TouchableOpacity>
         ))}
@@ -384,7 +393,7 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
       <TouchableOpacity onPress={() => onNavigate("soumettre")} activeOpacity={0.85}
         style={{ backgroundColor: C.primary, borderRadius: 14, padding: 16 }}>
         <Text style={{ color: "#e8f5e9", fontWeight: "600", fontSize: 14, marginBottom: 3 }}>Tu connais une chanson qui manque ? ✨</Text>
-        <Text style={{ color: "#a5d6a7", fontSize: 12, marginBottom: 10 }}>Contribue au carnet partagé — toutes les soumissions sont examinées par les admins.</Text>
+        <Text style={{ color: "#a5d6a7", fontSize: 12, marginBottom: 10 }}>Contribue au carnet partagé — toutes les chansons seront examinées par un admins.</Text>
         <View style={{ backgroundColor: "#e8f5e9", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start" }}>
           <Text style={{ color: C.primary, fontWeight: "500", fontSize: 13 }}>➕ Soumettre une chanson</Text>
         </View>
@@ -392,11 +401,15 @@ function HomePage({ onNavigate }: { onNavigate: (p: string) => void }) {
     </ScrollView>
   );
 }
-
-function SongListPage({ title, subtitle, songs, onSelectSong, onSubmit, showCampSort = false, onBack }:
+function SongListPage({ title, subtitle, songs, onSelectSong, onSubmit, showCampSort = false, onBack,
+  onToggleFavorite, favorites, playlists, onAddToPlaylist, filterConfig = "default" }:
   { title: string; subtitle?: string; songs: Chanson[]; onSelectSong: (s: Chanson) => void;
-    onSubmit: () => void; showCampSort?: boolean; onBack?:() => void  }) {
-  const [f, setF] = useState<FilterState>({ search: "", sort: showCampSort ? "camp" : "alpha", onlyCamp: false, campType: "", onlyGL: false });
+    onSubmit: () => void; showCampSort?: boolean; onBack?: () => void;
+    onToggleFavorite?: (id: string) => void; favorites?: string[];
+    playlists?: { name: string; songIds: string[] }[];
+    onAddToPlaylist?: (songId: string, plIdx: number) => void;
+    filterConfig?: "default" | "toutes" | "eeif" | "favorites" | "diverses" }) {
+  const [f, setF] = useState<FilterState>({ search: "", sort: showCampSort ? "camp" : "alpha", onlyCamp: false, campType: "", onlyGL: false, onlyDiverse: false, onlyEEIF: false, noCamp: false });
   const filtered = applyFilters(songs, f);
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -404,12 +417,15 @@ function SongListPage({ title, subtitle, songs, onSelectSong, onSubmit, showCamp
       <Text style={{ fontSize: 22, fontWeight: "600", color: C.textPrimary, marginBottom: 2 }}>{title}</Text>
       {subtitle && <Text style={{ fontSize: 13, color: C.textSecondary, marginBottom: 10 }}>{subtitle}</Text>}
       <SearchBar value={f.search} onChangeText={(t) => setF({ ...f, search: t })} />
-      <FilterBar f={f} setF={setF} showCampSort={showCampSort} />
+      {/*<FilterBar f={f} setF={setF} showCampSort={showCampSort} />*/}
+      <FilterBar f={f} setF={setF} showCampSort={showCampSort} config={filterConfig} />
       {filtered.length === 0 ? (
         <EmptyState emoji="🎶" title="Aucune chanson ici" sub="Tu peux en ajouter une !"
           btnLabel="➕ Soumettre" onBtn={onSubmit} />
       ) : (
-        filtered.map((s) => <SongCard key={s.id} song={s} onPress={() => onSelectSong(s)} />)
+        filtered.map((s) => <SongCard key={s.id} song={s} onPress={() => onSelectSong(s)}
+          onToggleFavorite={onToggleFavorite} isFavorite={favorites?.includes(s.id)}
+          playlists={playlists} onAddToPlaylist={onAddToPlaylist} />)
       )}
     </ScrollView>
   );
@@ -420,13 +436,9 @@ function GLPage({ songs, onSelectSong, onSubmit, onNavigateHome }:
   const [selectedGL, setSelectedGL] = useState<GroupeLocal | null>(null);
   const [glSearch, setGlSearch] = useState("");
   const [regionFilter, setRegionFilter] = useState<string>("all");
-  const [f, setF] = useState<FilterState>({ search: "", sort: "alpha", onlyCamp: false, campType: "", onlyGL: false });
+  const [f, setF] = useState<FilterState>({ search: "", sort: "alpha", onlyCamp: false, campType: "", onlyGL: false, onlyDiverse: false, onlyEEIF: false, noCamp: false });
 
   if (selectedGL) {
-    //const glSongs = applyFilters(
-    //  songs.filter((s) => s.isGL && s.glId === selectedGL.id),
-    //  f
-    //);
     const glSongs = applyFilters(
       songs.filter((s) => s.isGL && (
         (s.glIds && s.glIds.includes(selectedGL.id)) ||
@@ -468,7 +480,8 @@ function GLPage({ songs, onSelectSong, onSubmit, onNavigateHome }:
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <BackBtn onPress={onNavigateHome} />
-      <Text style={{ fontSize: 22, fontWeight: "600", color: C.textPrimary, marginBottom: 2 }}>📍 Chansons par GL</Text>
+      <Text style={{ fontSize: 22, fontWeight: "600", color: C.textPrimary, marginBottom: 2 }}>📍{/*📍<Image source={PHOTO.FVR} 
+                      style={{ width: 40, height: 40, borderRadius: 8 }}/>*/} Chansons par GL</Text>
       <Text style={{ fontSize: 13, color: C.textSecondary, marginBottom: 10 }}>Sélectionne un Groupe Local</Text>
       <SearchBar value={glSearch} onChangeText={setGlSearch} placeholder="Rechercher un GL…" />
       {/* Region filter */}
@@ -484,7 +497,6 @@ function GLPage({ songs, onSelectSong, onSubmit, onNavigateHome }:
       </ScrollView>
       {/* GL as list */}
       {glFiltered.map((gl) => {
-        //const count = songs.filter((s) => s.statut === "approuvé" && s.isGL && s.glId === gl.id).length;
         const count = songs.filter((s) => s.statut === "approuvé" && s.isGL && (
                       (Array.isArray(s.glIds) && s.glIds.includes(gl.id)) || s.glId === gl.id)).length;
         const img = GL_IMAGES[gl.id];
@@ -522,7 +534,30 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
   const [showPlaylistPicker, setShowPlaylistPicker] = useState(false);
   const [showRemarque, setShowRemarque] = useState(false);
   const [accordsEpingles, setAccordsEpingles] = useState(true);
-
+  const [autoScroll, setAutoScroll] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(2);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (autoScroll) {
+      autoScrollRef.current = setInterval(() => {
+        scrollY.current += scrollSpeed;
+        scrollRef.current?.scrollTo({ y: scrollY.current, animated: false });
+      }, 16);
+    } else {
+      if (autoScrollRef.current) {
+        clearInterval(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
+    }
+    return () => {
+      if (autoScrollRef.current) {
+        clearInterval(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
+    };
+  }, [autoScroll, scrollSpeed]);
   const lyricsSection = song.texte && song.texte.length > 0 && (
     <View style={{ marginBottom: 16 }}>
       <Text style={{ fontSize: 11, fontWeight: "500", textTransform: "uppercase", letterSpacing: 0.7, color: C.textSecondary, marginBottom: 8 }}>Paroles</Text>
@@ -565,7 +600,7 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
 
   const globalAccordsSection = song.accords && (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontSize: 11, fontWeight: "500", textTransform: "uppercase", letterSpacing: 0.7, color: C.textSecondary, marginBottom: 6 }}>🎸 Accords généraux</Text>
+      <Text style={{ fontSize: 11, fontWeight: "500", textTransform: "uppercase", letterSpacing: 0.7, color: C.textSecondary, marginBottom: 6 }}>🎸 Accords</Text>
       <View style={{ backgroundColor: "#fff9f0", borderRadius: 8, borderWidth: 0.5, borderColor: "#f0c060", padding: 12 }}>
         <Text style={{ fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontSize: fontSize, color: "#7a4f00" }}>{song.accords}</Text>
       </View>
@@ -584,6 +619,27 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
           <TouchableOpacity onPress={() => setAccordsEpingles(false)}>
             <Text style={{ fontSize: 12, color: '#7a4f00' }}>✕ Masquer</Text>
           </TouchableOpacity>
+          {/* Contrôles défilement auto */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 8 }}>
+          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.max(1, s - 1))}
+            style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#f0c060",
+                     alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#7a4f00", fontWeight: "700", fontSize: 16 }}>−</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setAutoScroll(v => !v)}
+            style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: autoScroll ? C.primary : "#f0c060",
+                     alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: autoScroll ? "#e8f5e9" : "#7a4f00", fontSize: 14 }}>
+              {autoScroll ? "⏸" : "▶"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setScrollSpeed(s => Math.min(10, s + 1))}
+            style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#f0c060",
+                     alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#7a4f00", fontWeight: "700", fontSize: 16 }}>+</Text>
+          </TouchableOpacity>
+          <Text style={{ fontSize: 12, color: "#7a4f00" }}>Vitesse : {scrollSpeed}</Text>
+        </View>
         </View>
         <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
                        fontSize: fontSize, color: '#7a4f00' }}>
@@ -591,9 +647,14 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
         </Text>
       </View>
     )}
-    <ScrollView contentContainerStyle={{ padding: 16 }}>
+    //<ScrollView contentContainerStyle={{ padding: 16 }}>
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={{ padding: 16 }}
+      onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
+      scrollEventThrottle={16}></ScrollView>
       {/* Top row */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+      {/*<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
         <BackBtn onPress={onBack} />
         <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
           <TouchableOpacity onPress={() => onToggleFavorite(song.id)}
@@ -630,6 +691,46 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
             </TouchableOpacity>
           )}
         </View>
+      </View>*/}
+      {/* Top row — scroll horizontal sur mobile */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 8 }}>
+        <BackBtn onPress={onBack} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8, flexDirection: "row", alignItems: "center" }}>
+          <TouchableOpacity onPress={() => onToggleFavorite(song.id)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 7,
+                     borderRadius: 8, borderWidth: 0.5, borderColor: isFav ? C.red.border : C.border,
+                     backgroundColor: isFav ? C.red.bg : "#f5f5f5" }}>
+            <Text style={{ fontSize: 13, color: isFav ? C.red.text : C.textSecondary }}>{isFav ? "❤️ Favori" : "🤍 Favoris"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowPlaylistPicker(!showPlaylistPicker)}
+            style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 0.5,
+                     borderColor: C.border, backgroundColor: "#f5f5f5" }}>
+            <Text style={{ fontSize: 13, color: C.textSecondary }}>📋 Playlist</Text>
+          </TouchableOpacity>
+          {song.lien && (
+            <TouchableOpacity onPress={() => { if (song.lien) { require('react-native').Linking.openURL(song.lien); } }}
+              style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 0.5,
+                       borderColor: C.green.border, backgroundColor: C.green.bg }}>
+              <Text style={{ fontSize: 13, color: C.primary }}>🎧 Écouter</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => setShowRemarque(true)}
+            style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 0.5,
+                     borderColor: C.border, backgroundColor: "#f5f5f5" }}>
+            <Text style={{ fontSize: 13, color: C.textSecondary }}>💬 Modif</Text>
+          </TouchableOpacity>
+          {song.accords && (
+            <TouchableOpacity onPress={() => setAccordsEpingles(!accordsEpingles)}
+              style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 0.5,
+                       borderColor: accordsEpingles ? '#f0c060' : C.border,
+                       backgroundColor: accordsEpingles ? '#fff9f0' : '#f5f5f5' }}>
+              <Text style={{ fontSize: 13, color: accordsEpingles ? '#7a4f00' : C.textSecondary }}>
+                {accordsEpingles ? '🎸 Épinglé' : '🎸 Épingler'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
       </View>
 
       {/* Playlist picker */}
@@ -700,7 +801,7 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
           Array.isArray(song.glNoms) &&
           song.glNoms.map((nom, i) => (
             <Badge key={i} color="amber">
-              📍 {nom}
+              {"📍 " + nom}
             </Badge>
           ))
         }
@@ -738,9 +839,12 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
   );
 }
 
-function FavoritesPage({ songs, favorites, onSelectSong, onNavigate }:
-  { songs: Chanson[]; favorites: string[]; onSelectSong: (s: Chanson) => void; onNavigate: (p: string) => void }) {
-  const [f, setF] = useState<FilterState>({ search: "", sort: "alpha", onlyCamp: false, campType: "", onlyGL: false });
+function FavoritesPage({ songs, favorites, onSelectSong, onNavigate, onToggleFavorite, playlists, onAddToPlaylist }:
+  { songs: Chanson[]; favorites: string[]; onSelectSong: (s: Chanson) => void; onNavigate: (p: string) => void;
+    onToggleFavorite?: (id: string) => void;
+    playlists?: { name: string; songIds: string[] }[];
+    onAddToPlaylist?: (songId: string, plIdx: number) => void }) {
+  const [f, setF] = useState<FilterState>({ search: "", sort: "alpha", onlyCamp: false, campType: "", onlyGL: false, onlyDiverse: false, onlyEEIF: false, noCamp: false });
   const favSongs = applyFilters(songs.filter((s) => favorites.includes(s.id)), f);
   const total = songs.filter((s) => favorites.includes(s.id)).length;
   return (
@@ -755,21 +859,23 @@ function FavoritesPage({ songs, favorites, onSelectSong, onNavigate }:
       ) : (
         <>
           <SearchBar value={f.search} onChangeText={(t) => setF({ ...f, search: t })} />
-          <FilterBar f={f} setF={setF} showCampSort />
-          {favSongs.map((s) => <SongCard key={s.id} song={s} onPress={() => onSelectSong(s)} />)}
+          <FilterBar f={f} setF={setF} showCampSort config="favorites" />
+          {favSongs.map((s) => <SongCard key={s.id} song={s} onPress={() => onSelectSong(s)}
+            onToggleFavorite={onToggleFavorite} isFavorite={favorites.includes(s.id)}
+            playlists={playlists} onAddToPlaylist={onAddToPlaylist} />)}
         </>
       )}
     </ScrollView>
   );
 }
-
 function PlaylistsPage({ songs, playlists, onAddPlaylist, onDeletePlaylist, onSelectPlaylist, selectedPlaylist,
-  onBack, onSelectSong, onAddSongToPlaylist, onNavigateHome }:
+  onBack, onSelectSong, onAddSongToPlaylist, onRemoveSongFromPlaylist }:
   { songs: Chanson[]; playlists: { name: string; songIds: string[] }[];
     onAddPlaylist: (name: string) => void; onDeletePlaylist: (i: number) => void;
     onSelectPlaylist: (i: number) => void; selectedPlaylist: number | null;
     onBack: () => void; onSelectSong: (s: Chanson) => void;
     onAddSongToPlaylist: (songId: string, plIdx: number) => void;
+    onRemoveSongFromPlaylist: (songId: string, plIdx: number) => void;
     onNavigateHome: () => void }) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -783,14 +889,23 @@ function PlaylistsPage({ songs, playlists, onAddPlaylist, onDeletePlaylist, onSe
       (!songSearch || s.titre.toLowerCase().includes(songSearch.toLowerCase())));
     return (
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <BackBtn onPress={onNavigateHome} />
         <BackBtn onPress={onBack} />
         <Text style={{ fontSize: 20, fontWeight: "600", color: C.textPrimary, marginBottom: 2 }}>📋 {pl.name}</Text>
         <Text style={{ fontSize: 13, color: C.textSecondary, marginBottom: 12 }}>{plSongs.length} chanson{plSongs.length !== 1 ? "s" : ""}</Text>
         {plSongs.length === 0 ? (
           <EmptyState emoji="🎵" title="Playlist vide" sub="Ajoute des chansons ci-dessous" />
         ) : (
-          plSongs.map((s) => <SongCard key={s.id} song={s} onPress={() => onSelectSong(s)} />)
+          plSongs.map((s) => (
+            <View key={s.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <View style={{ flex: 1 }}>
+                <SongCard song={s} onPress={() => onSelectSong(s)} />
+              </View>
+              <TouchableOpacity onPress={() => onRemoveSongFromPlaylist(s.id, selectedPlaylist!)}
+                style={{ padding: 10, borderRadius: 8, backgroundColor: C.red.bg, borderWidth: 0.5, borderColor: C.red.border }}>
+                <Text style={{ color: C.red.text, fontSize: 13 }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          ))
         )}
         <View style={{ marginTop: 10 }}>
           <TouchableOpacity onPress={() => setAddingSong(!addingSong)}
@@ -938,26 +1053,18 @@ function SubmitPage({ onSubmit, onBack, editingSong = null }:
   });
   const [submitted, setSubmitted] = useState(false);
   const update = (key: string, val: any) => setForm((f) => ({ ...f, [key]: val }));
-  const addVers = () => setForm((f) => {
-    const newType = "couplet" as const;
-    // Cherche la dernière occurrence du même type pour pré-remplir
-    const sameType = f.texte.filter((v) => v.type === newType);
-    const last = sameType.length > 0 ? sameType[sameType.length - 1] : null;
-    return {
-      ...f,
-      texte: [...f.texte, {
-        type: newType,
-        numero: f.texte.filter((v) => v.type === newType).length + 1,
-        paroles: last?.paroles || "",
-        accords: last?.accords || "",
-        multiplicateur: "",
-      }],
-    };
-  });
-  //const addVers = () => setForm((f) => ({
-  //  ...f,
-  //  texte: [...f.texte, { type: "couplet" as const, numero: f.texte.filter((v) => v.type === "couplet").length + 1, paroles: "", accords: "" }],
-  //}));
+
+  const addVers = () => setForm((f) => ({
+    ...f,
+    texte: [...f.texte, {
+      type: "couplet" as const,
+      numero: f.texte.filter((v) => v.type === "couplet").length + 1,
+      paroles: "",
+      accords: "",
+      multiplicateur: "",
+    }],
+  }));
+
   const updateVers = (i: number, key: string, val: any) => {
     const texte = [...form.texte];
     texte[i] = { ...texte[i], [key]: val };
@@ -971,34 +1078,8 @@ function SubmitPage({ onSubmit, onBack, editingSong = null }:
     // Sécurisation des données en cascade
     const finalIsGL = form.isEEIF ? form.isGL : false;
     const finalIsCamp = finalIsGL ? form.isCamp : false;
-    
-    //const glObj = finalIsGL ? GROUPES_LOCAUX.find((g) => g.id === form.glId) : undefined;
-    // Dans handleSubmitSong, après la ligne qui calcule glObj, ajoute :
     const glObjs = GROUPES_LOCAUX.filter((g) => (form.glIds || []).includes(g.id));
     //const glObj = GROUPES_LOCAUX.find((g) => g.id === form.glId);
-    //onSubmit({
-    //  ...(editingSong || {}),
-    //  id: editingSong?.id || ("s_" + Date.now()),
-    //  titre: form.titre,
-    //  categorie: form.isEEIF ? "eeif" : "diverse",
-    //  isGL: form.isGL,
-    //  glId: form.isGL ? form.glId : undefined,
-    //  glNom: form.isGL && glObj ? glObj.nom : undefined,
-    //  isCamp: form.isCamp,
-    //  annéeCamp: form.isCamp ? form.annéeCamp : undefined,
-    //  nomCamp: form.isCamp ? form.nomCamp : undefined,
-    //  texte: form.texte,
-    //  accords: form.accords || null,
-    //  rythme: form.rythme || null,
-    //  auteur: form.auteur || null,
-    //  airDe: form.airDe || null,
-    //  note: form.note || null,
-    //  lien: form.lien || null,
-    //  soumisParEmail: form.soumisParEmail || undefined,
-    //  statut: editingSong?.statut || "en_attente",
-    //  soumisParNom: editingSong?.soumisParNom || "Contributeur",
-    //  dateAjout: editingSong?.dateAjout || new Date().toISOString().slice(0, 10),
-    //} as Chanson);
     onSubmit({
       ...(editingSong || {}),
       id: editingSong?.id || ("s_" + Date.now()),
@@ -1072,8 +1153,8 @@ function SubmitPage({ onSubmit, onBack, editingSong = null }:
         </>
       )}
 
-      <Text style={{ fontSize: 13, fontWeight: "500", color: C.textPrimary, marginBottom: 5 }}>Accords généraux</Text>
-      <TextInput value={form.accords} onChangeText={(t) => update("accords", t)} placeholder="Ex: Am - F - C - G"
+      <Text style={{ fontSize: 13, fontWeight: "500", color: C.textPrimary, marginBottom: 5 }}>Accords épinglés</Text>
+      <TextInput value={form.accords} onChangeText={(t) => update("accords", t)} placeholder="Ex: Am - F - C - G" placeholderTextColor="#aaa"
         multiline numberOfLines={3}
         style={{ borderWidth: 0.5, borderColor: C.border, borderRadius: 8, padding: 9, fontSize: 14,
                  color: C.textPrimary, marginBottom: 12, minHeight: 60, textAlignVertical: "top" }} />
@@ -1174,16 +1255,22 @@ function SubmitPage({ onSubmit, onBack, editingSong = null }:
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 5 }}>
                 {VERS_TYPES.map((t) => (
                   <TouchableOpacity key={t} onPress={() => {
-                    const sameType = form.texte.filter((v, idx) => idx !== i && v.type === t);
+                    const PRE_REMPLIR = ["refrain", "pré-refrain", "pont", "post-refrain"];
+                    const currentTexte = form.texte;
+                    const sameType = currentTexte.filter((v, idx) => idx !== i && v.type === t);
                     const last = sameType.length > 0 ? sameType[sameType.length - 1] : null;
-                    const updated = { ...form.texte[i], type: t as any };
-                    if (last && !form.texte[i].paroles) updated.paroles = last.paroles || "";
-                    if (last && !form.texte[i].accords) updated.accords = last.accords || "";
-                    updateVers(i, "type", t);
-                    if (last && !form.texte[i].paroles) updateVers(i, "paroles", last.paroles || "");
-                    if (last && !form.texte[i].accords) updateVers(i, "accords", last.accords || "");
+                    const currentVers = currentTexte[i];
+                    const newParoles = (PRE_REMPLIR.includes(t) && last && !currentVers.paroles)
+                      ? (last.paroles || "") : currentVers.paroles;
+                    const newAccords = (last && !currentVers.accords)
+                      ? (last.accords || "") : currentVers.accords;
+                    const newNumero = t === "couplet"
+                      ? currentTexte.filter((v, idx) => idx !== i && v.type === "couplet").length + 1
+                      : undefined;
+                    const newTexte = [...currentTexte];
+                    newTexte[i] = { ...currentVers, type: t as any, paroles: newParoles, accords: newAccords, numero: newNumero };
+                    setForm((prev) => ({ ...prev, texte: newTexte }));
                   }}
-                  //<TouchableOpacity key={t} onPress={() => updateVers(i, "type", t)}
                     style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14, borderWidth: 0.5,
                              borderColor: v.type === t ? C.primary : C.border,
                              backgroundColor: v.type === t ? "#e8f5e9" : C.white }}>
@@ -1197,20 +1284,23 @@ function SubmitPage({ onSubmit, onBack, editingSong = null }:
                 </TouchableOpacity>
               )}
             </View>
-            <Text style={{ fontSize: 12, color: C.textSecondary, marginBottom: 4 }}>Paroles</Text>
+            <Text style={{ fontSize: 12, color: C.textPrimary, marginBottom: 4 }}>Paroles</Text>
             <TextInput value={v.paroles} onChangeText={(t) => updateVers(i, "paroles", t)}
               placeholder="Paroles de cette partie…" multiline numberOfLines={4}
+              placeholderTextColor="#aaa"
               style={{ borderWidth: 0.5, borderColor: C.border, borderRadius: 8, padding: 9, fontSize: 14,
                        color: C.textPrimary, minHeight: 70, textAlignVertical: "top", marginBottom: 8 }} />
-            <Text style={{ fontSize: 12, color: C.textSecondary, marginBottom: 4 }}>Accords pour cette partie (facultatif)</Text>
-            <Text style={{ fontSize: 12, color: C.textSecondary, marginBottom: 4, marginTop: 8 }}>Multiplicateur (facultatif, ex: x2)</Text>
-            <TextInput value={v.multiplicateur || ""} onChangeText={(t) => updateVers(i, "multiplicateur", t)}
-              placeholder="Ex: x2"
-              style={{ borderWidth: 0.5, borderColor: C.border, borderRadius: 8, padding: 9,
-                       fontSize: 14, color: C.textPrimary, width: 80 }} />
+            <Text style={{ fontSize: 12, color: C.textPrimary, marginBottom: 4 }}>Accords pour cette partie (facultatif)</Text>
             <TextInput value={v.accords || ""} onChangeText={(t) => updateVers(i, "accords", t)}
               placeholder="Ex: Am - F - C - G"
+              placeholderTextColor="#aaa"
               style={{ borderWidth: 0.5, borderColor: C.border, borderRadius: 8, padding: 9, fontSize: 14, color: C.textPrimary }} />
+            <Text style={{ fontSize: 12, color: C.textPrimary, marginBottom: 4, marginTop: 8 }}>Multiplicateur (facultatif)</Text>
+            <TextInput value={v.multiplicateur || ""} onChangeText={(t) => updateVers(i, "multiplicateur", t)}
+              placeholder="Ex: x2"
+              placeholderTextColor="#aaa"
+              style={{ borderWidth: 0.5, borderColor: C.border, borderRadius: 8, padding: 9,
+                       fontSize: 14, color: C.textPrimary, width: 80 }} />
           </View>
         ))}
         <Btn label="+ Ajouter une partie" onPress={addVers} variant="secondary" small />
@@ -1596,8 +1686,8 @@ function Drawer({ open, onClose, page, onNavigate, isAdmin, pendingCount }:
     isAdmin: boolean; pendingCount: number }) {
   if (!open) return null;
   return (
-    <View style={StyleSheet.absoluteFillObject as any}>
-      <TouchableOpacity style={{ ...StyleSheet.absoluteFillObject as any, backgroundColor: "rgba(0,0,0,0.4)" }}
+    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}>
+      <TouchableOpacity style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)" }}
         onPress={onClose} activeOpacity={1} />
       <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 280,
                      backgroundColor: C.white, shadowColor: "#000", shadowOpacity: 0.2,
@@ -1662,7 +1752,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [selectedSong, setSelectedSong] = useState<Chanson | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [playlists, setPlaylists] = useState([{ name: "Veillée feu de camp", songIds: ["s1", "s2"] }]);
+  const [playlists, setPlaylists] = useState<{ name: string; songIds: string[] }[]>([]);
+  //const [playlists, setPlaylists] = useState([{ name: "Veillée feu de camp", songIds: ["s1", "s2"] }]);
   const [selectedPlaylistIdx, setSelectedPlaylistIdx] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -1720,16 +1811,6 @@ export default function App() {
       console.error(e);
     }
   };
-  //const handleSubmitSong = (song: Chanson) => {
-  //  setSongs((s) => {
-  //    const idx = s.findIndex((x) => x.id === song.id);
-  //    if (idx >= 0) { const n = [...s]; n[idx] = song; return n; }
-  //    return [...s, song];
-  //  });
-  //  setEditingSong(null);
-  //  navigate("home");
-  //  showToast(editingSong ? "Chanson modifiée ✓" : "Chanson soumise ✓ — en attente de validation");
-  //};
 
   const handleApprove = async (id: string) => {
     try {
@@ -1740,11 +1821,6 @@ export default function App() {
       showToast('Erreur lors de la validation');
     }
   };
-  //const handleApprove = (id: string) => {
-  //  setSongs((s) => s.map((x) => x.id === id ? { ...x, statut: "approuvé" } : x));
-  //  setSelectedSong(null);
-  //  showToast("Chanson approuvée ✓");
-  //};
 
   const handleRejectWithEmail = (song: Chanson) => {
     if (song.statut === 'en_attente') {
@@ -1767,21 +1843,6 @@ export default function App() {
       ]);
     }
   };
-  //const handleRejectWithEmail = (song: Chanson) => {
-  //  if (song.statut === "en_attente") {
-  //    setRejectingSong(song);
-  //  } else {
-  //    // Supprimer une chanson approuvée directement
-  //    Alert.alert("Supprimer", `Supprimer "${song.titre}" ?`, [
-  //      { text: "Annuler", style: "cancel" },
-  //      { text: "Supprimer", style: "destructive", onPress: () => {
-  //        setSongs((s) => s.filter((x) => x.id !== song.id));
-  //        setSelectedSong(null);
-  //        showToast("Chanson supprimée");
-  //      }},
-  //    ]);
-  //  }
-  //};
 
   const handleSendRejectEmail = async (msg: string) => {
     if (!rejectingSong) return;
@@ -1799,19 +1860,6 @@ export default function App() {
     setRejectingSong(null);
     setSelectedSong(null);
   };
-  //const handleSendRejectEmail = (msg: string) => {
-  //  if (!rejectingSong) return;
-  //  // En production: appel API d'envoi d'email ici
-  //  // Pour l'instant, on simule l'envoi
-  //  if (rejectingSong.soumisParEmail) {
-  //    showToast(`Email envoyé à ${rejectingSong.soumisParEmail}`);
-  //  } else {
-  //    showToast("Chanson supprimée (pas d'email)");
-  //  }
-  //  setSongs((s) => s.filter((x) => x.id !== rejectingSong.id));
-  //  setRejectingSong(null);
-  //  setSelectedSong(null);
-  //};
 
   const handleAddToPlaylist = (songId: string, plIdx: number) => {
     setPlaylists((p) => {
@@ -1822,6 +1870,15 @@ export default function App() {
       } else {
         showToast("Déjà dans cette playlist");
       }
+      return updated;
+    });
+  };
+
+  const handleRemoveFromPlaylist = (songId: string, plIdx: number) => {
+    setPlaylists((p) => {
+      const updated = [...p];
+      updated[plIdx] = { ...updated[plIdx], songIds: updated[plIdx].songIds.filter((id) => id !== songId) };
+      showToast("Retiré de la playlist");
       return updated;
     });
   };
@@ -1863,11 +1920,25 @@ export default function App() {
         onRejectWithEmail={handleRejectWithEmail} onEdit={(s) => setEditingSong(s)} />
     );
     if (page === "home")      return <HomePage onNavigate={navigate} />;
-    if (page === "toutes")    return <SongListPage title="🎶 Toutes les chansons" songs={songs} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
-    if (page === "eeif")      return <SongListPage title="⚜️ Chansons EEIF" subtitle="Chansons officielles du mouvement" songs={songs.filter((s) => s.categorie === "eeif")} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
+    if (page === "toutes")    return <SongListPage title="🎶 Toutes les chansons" songs={songs}
+      onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")} filterConfig="toutes"
+      onToggleFavorite={handleToggleFavorite} favorites={favorites} playlists={playlists} onAddToPlaylist={handleAddToPlaylist}/>;
+    if (page === "eeif")      return <SongListPage title="⚜️ Chansons EEIF" subtitle="Chansons officielles du mouvement"
+      songs={songs.filter((s) => s.categorie === "eeif")} onSelectSong={setSelectedSong}
+      onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")} filterConfig="eeif"
+      onToggleFavorite={handleToggleFavorite} favorites={favorites} playlists={playlists} onAddToPlaylist={handleAddToPlaylist}/>;
     if (page === "gl")        return <GLPage songs={songs} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onNavigateHome={() => navigate("home")}/>;
-    if (page === "diverses")  return <SongListPage title="🎵 Chansons diverses" subtitle="Chansons populaires et classiques scouts" songs={songs.filter((s) => s.categorie === "diverse")} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
-    if (page === "favorites") return <FavoritesPage songs={songs} favorites={favorites} onSelectSong={setSelectedSong} onNavigate={navigate} />;
+    if (page === "diverses")  return <SongListPage title="🎵 Chansons diverses" subtitle="Chansons populaires et classiques scouts"
+      songs={songs.filter((s) => s.categorie === "diverse")} onSelectSong={setSelectedSong}
+      onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")} filterConfig="diverses"
+      onToggleFavorite={handleToggleFavorite} favorites={favorites} playlists={playlists} onAddToPlaylist={handleAddToPlaylist}/>;
+    if (page === "favorites") return <FavoritesPage songs={songs} favorites={favorites} onSelectSong={setSelectedSong}
+      onNavigate={navigate} onToggleFavorite={handleToggleFavorite} playlists={playlists} onAddToPlaylist={handleAddToPlaylist}/>;
+//    if (page === "toutes")    return <SongListPage title="🎶 Toutes les chansons" songs={songs} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
+//    if (page === "eeif")      return <SongListPage title="⚜️ Chansons EEIF" subtitle="Chansons officielles du mouvement" songs={songs.filter((s) => s.categorie === "eeif")} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
+//    if (page === "gl")        return <GLPage songs={songs} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onNavigateHome={() => navigate("home")}/>;
+//    if (page === "diverses")  return <SongListPage title="🎵 Chansons diverses" subtitle="Chansons populaires et classiques scouts" songs={songs.filter((s) => s.categorie === "diverse")} onSelectSong={setSelectedSong} onSubmit={() => navigate("soumettre")} onBack={() => navigate("home")}/>;
+//    if (page === "favorites") return <FavoritesPage songs={songs} favorites={favorites} onSelectSong={setSelectedSong} onNavigate={navigate} />;
     if (page === "playlists") return (
       <PlaylistsPage songs={songs} playlists={playlists}
         onAddPlaylist={(name) => setPlaylists((p) => [...p, { name, songIds: [] }])}
@@ -1875,7 +1946,8 @@ export default function App() {
         onSelectPlaylist={setSelectedPlaylistIdx} selectedPlaylist={selectedPlaylistIdx}
         onBack={() => setSelectedPlaylistIdx(null)} onSelectSong={setSelectedSong}
         onAddSongToPlaylist={handleAddToPlaylist}
-        onNavigateHome={() => navigate("home")} />
+        onNavigateHome={() => navigate("home")}
+        onRemoveSongFromPlaylist={handleRemoveFromPlaylist} />
     );
     if (page === "soumettre") return <SubmitPage onSubmit={handleSubmitSong} onBack={() => navigate("home")} />;
     if (page === "admin")     return <AdminPage songs={songs} onApprove={handleApprove} onRejectWithEmail={handleRejectWithEmail} onEdit={(s) => setEditingSong(s)} onBack={() => navigate("home")} />;
@@ -1907,7 +1979,7 @@ export default function App() {
             <Text style={{ color: "#e8f5e9", fontSize: 22, lineHeight: 22 }}>☰</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigate("home")} style={{ flex: 1 }}>
-            <Text style={{ color: "#e8f5e9", fontSize: 17, fontWeight: "600", letterSpacing: 0.3 }}>🏕️ Chant-EEIF</Text>
+            <Text style={{ color: "#e8f5e9", fontSize: 17, fontWeight: "600", letterSpacing: 0.3 }}>🏠 Chant-EEIF</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
             {isAdmin && pendingCount > 0 && (
