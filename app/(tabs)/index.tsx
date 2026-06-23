@@ -647,12 +647,12 @@ function SongDetailPage({ song, onBack, favorites, onToggleFavorite, playlists, 
         </Text>
       </View>
     )}
-    //<ScrollView contentContainerStyle={{ padding: 16 }}>
+
     <ScrollView
       ref={scrollRef}
       contentContainerStyle={{ padding: 16 }}
       onScroll={(e) => { scrollY.current = e.nativeEvent.contentOffset.y; }}
-      scrollEventThrottle={16}></ScrollView>
+      scrollEventThrottle={16}>{/*</ScrollView>*/}
       {/* Top row */}
       {/*<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
         <BackBtn onPress={onBack} />
@@ -1619,7 +1619,8 @@ function AccountPage({ isAdmin, adminPwd, onToggleAdmin, onBack, settings, onUpd
           </View>
         )}
         <Text style={{ fontSize: 11, color: C.textSecondary, marginTop: 10 }}>
-          Mot de passe par défaut : admin123 (à changer dans le code)
+          Champ réservé a l'administration
+          {/*Mot de passe par défaut : admin123 (à changer dans le code)*/}
         </Text>
       </Card>
     </ScrollView>
